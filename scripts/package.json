@@ -1,0 +1,10 @@
+{
+  "name": "webaudio-score-tools",
+  "private": true,
+  "type": "module",
+  "description": "无头 Chrome 离线渲染 Web Audio 配乐为 WAV",
+  "dependencies": {
+    "puppeteer-core": "^25.0.0",
+    "ws": "^8.18.0"
+  }
+}

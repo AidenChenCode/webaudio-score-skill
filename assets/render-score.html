@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Score — Web Audio</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0b0b10; color: #eee; font: 15px/1.6 "SF Mono", Menlo, monospace; }
+  .box { text-align: center; }
+  button { font: inherit; letter-spacing: 3px; color: #fff; background: #333; border: 0; border-radius: 6px; padding: 14px 28px; margin: 6px; cursor: pointer; }
+  button:hover { filter: brightness(1.25); }
+  #log { opacity: 0.7; margin-top: 12px; white-space: pre; }
+</style>
+</head>
+<body>
+<div class="box">
+  <div id="title"></div>
+  <button id="play">▶ PLAY</button>
+  <button id="render">⬇ RENDER WAV</button>
+  <div id="log"></div>
+</div>
+<!-- 单独出音频的最小页面：配置 → 音乐引擎 → 配乐。无头导出时用 scripts/render_wav.mjs 调 window.__renderAudioWav() -->
+<script src="spec.js"></script>
+<script src="engine-audio.js"></script>
+<script src="score.js"></script>
+<script>
+'use strict';
+const log = s => { document.getElementById('log').textContent = s; };
+document.getElementById('title').textContent = `${SPEC.title || 'score'} · ${SPEC.duration} s · ${SPEC.bpm || 120} BPM`;
+let ac = null;
+document.getElementById('play').addEventListener('click', () => {
+  if (ac) ac.close();
+  ac = new AudioContext({ sampleRate: 48000 });
+  const t0 = ac.currentTime + 0.15;
+  PROJECT.score(makeKit(ac, t0));
+  const tick = () => { const t = ac.currentTime - t0; log(`playing  ${Math.max(0, t).toFixed(2)} / ${SPEC.duration} s`); if (t < SPEC.duration) requestAnimationFrame(tick); else log('done'); };
+  tick();
+});
+document.getElementById('render').addEventListener('click', async () => {
+  log('rendering offline…');
+  const b64 = await window.__renderAudioWav();
+  const bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([u8], { type: 'audio/wav' }));
+  const a = document.createElement('a'); a.href = url; a.download = `${(SPEC.title || 'score').replace(/\s+/g, '-')}.wav`; a.click();
+  log(`wav ready · ${(u8.length / 1e6).toFixed(2)} MB`);
+});
+window.__ready = true;
+</script>
+</body>
+</html>
